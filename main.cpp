@@ -1,10 +1,6 @@
 #include <iostream>
 using namespace std;
 
-//struct NoCompromisso{
-//  int h.comeco,m.comeco,h.fim,m.fim;
-//char *texto;
-//};
 
 struct NoData{
     unsigned int dia, mes, ano;
@@ -20,8 +16,16 @@ bool anoBissexto( int ano ){
                                (ano % 400 == 0)));
 }
 
-void mostrarData( NoData *d ){
-    cout << d->dia << "/" << d->mes << "/" << d->ano;
+void mostrarAgenda(Data lst, char frase[] ){
+    NoData *aux;
+
+    cout << frase << ": ";
+    aux = lst.comeco;
+    while( aux != NULL ){
+        cout << aux->dia << "/"<< aux->mes << "/"<< aux->ano << "  ";
+        aux = aux->eloP;
+    }
+    cout << endl;
 }
 
 NoData *novaData(int d, int m, int a){
@@ -56,34 +60,71 @@ void inicializarLista(Data &lst){
     lst.fim = NULL;
 }
 
-bool inserirData(Data &lst, int info){
+bool inserirData(Data &lst, int d, int m, int a){
     NoData *novaData = new NoData;
     if( novaData == NULL ) return false;
 
-    novaData->info = valor;
+    novaData->dia = d;
+    novaData->mes = m;
+    novaData->ano = a;
+
     novaData->eloA = NULL;
     novaData->eloP = NULL;
+
+    if( lst.comeco == NULL ){
+        lst.comeco = novaData;
+        lst.fim = novaData;
+        return true;
+    }
+    if( a < lst.comeco->ano && m < lst.comeco->mes && d < lst.comeco->dia){
+        novaData->eloP = lst.comeco;
+        lst.comeco->eloA = novaData;
+        lst.comeco = novaData;
+        return true;
+    }
+    if( a > lst.comeco->ano && m > lst.comeco->mes && d > lst.comeco->dia ){
+        lst.fim->eloP = novaData;
+        novaData->eloA = lst.fim;
+        lst.fim = novaData;
+        return true;
+    }
+    NoData *aux = lst.comeco;
+    while (aux != NULL) {
+        if (compararData(novaData, aux) <= 0) { // novaData é anterior ou igual a aux
+            if (aux->eloA != NULL) { // se aux não é o primeiro elemento da lista
+                novaData->eloA = aux->eloA;
+                aux->eloA->eloP = novaData;
+            } else { // se aux é o primeiro elemento da lista
+                lst.comeco = novaData;
+            }
+            novaData->eloP = aux;
+            aux->eloA = novaData;
+            return true; // a data foi inserida com sucesso
+        }
+        aux = aux->eloP;
+    }
+
+// se a função chegou até aqui, a nova data é posterior a todas as datas da lista
+    lst.fim->eloP = novaData;
+    novaData->eloA = lst.fim;
+    lst.fim = novaData;
+    return true;
 
 }
 
 int main(){
-    NoData *d1, *d2;
+    Data agenda;
+    inicializarLista(agenda);
+    inserirData(agenda, 24,2,2023);
 
-    d1 = novaData(24, 3, 2023);
-    d2 = novaData(29, 4, 2023);
+    inserirData(agenda, 24,3,2023);
+    inserirData(agenda, 24,3,2023);
+    inserirData(agenda, 24,3,2020);
 
-    if( d1 == NULL || d2 == NULL ){
-        cout << "Data invalida" << endl;
-        return 0;
-    }
+    inserirData(agenda, 23,3,2023);
+    inserirData(agenda, 22,3,2023);
 
-    mostrarData(d1);
-    int x = compararData(d1, d2 );
-    if( x == 0 ) cout << " = ";
-    else if( x < 0 ) cout << " < ";
-    else cout << " > ";
-    mostrarData(d2);
-    cout << endl;
+    mostrarAgenda(agenda, "Datas");
 
     return 0;
 }
