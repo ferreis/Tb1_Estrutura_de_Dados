@@ -6,7 +6,7 @@ struct NoCompromisso {
     //int h.comeco,m.comeco,h.fim,m.fim;
     int hInicio, hFinal;
     int mInicio, mFinal;
-    char *texto;
+    string *texto;
     NoCompromisso *eloP, *eloA;
 };
 
@@ -149,7 +149,8 @@ bool retirarData(Data &lst, int d, int m, int a) {
 
 bool
 adicionarCompromisso(Data &lst, int d, int m, int a, int horaInicio, int minutoInicio, int horaFinal, int minutoFinal,
-                     char *texto) {
+                     string *texto) {
+    //cria aux do Nó data e verificar se é NULL e o mesmo para o compromisso
     NoData *aux = buscarData(lst, d, m, a);
     if (aux == NULL) return NULL;
 
@@ -162,12 +163,16 @@ adicionarCompromisso(Data &lst, int d, int m, int a, int horaInicio, int minutoI
     novoCompromisso->mFinal = minutoFinal;
     novoCompromisso->texto = texto;
 
+    //verificar e o começo está NULL para preencher
     if (aux->comeco == NULL) {
         aux->comeco = novoCompromisso;
         aux->fim = novoCompromisso;
     } else {
+        // verificar se o compAux e diferente de NULL
         NoCompromisso *compAux = aux->comeco;
         while (compAux != NULL) {
+
+            // verificando se a hora e maior ou o minuto e maior
             if (compAux->hInicio > novoCompromisso->hInicio ||
                 (compAux->hInicio == novoCompromisso->hInicio && compAux->mInicio > novoCompromisso->mInicio)) {
                 // inserir antes de compAux
@@ -210,17 +215,19 @@ adicionarCompromisso(Data &lst, int d, int m, int a, int horaInicio, int minutoI
 
     return true;
 }
+
 void mostrarCompromissos(Data lst) {
     NoData *auxData = lst.comeco;
 
     while (auxData != NULL) {
+        //escreve o resfoltado na tela
         cout << auxData->dia << "/" << auxData->mes << "/" << auxData->ano << ":\n";
 
         NoCompromisso *auxCompromisso = auxData->comeco;
         while (auxCompromisso != NULL) {
             cout << "\tHorário: " << auxCompromisso->hInicio << ":" << auxCompromisso->mInicio
                  << " - " << auxCompromisso->hFinal << ":" << auxCompromisso->mFinal << "\n";
-            cout << "\tCompromisso: " << auxCompromisso->texto << "\n\n";
+            cout << "\tCompromisso: " << *auxCompromisso->texto << "\n\n";
 
             auxCompromisso = auxCompromisso->eloP;
         }
@@ -228,10 +235,11 @@ void mostrarCompromissos(Data lst) {
         auxData = auxData->eloP;
     }
 }
+
 int main() {
     int d, m, a;
     int hI, mI, hF, mF;
-    string text;
+    string anotacao;
     Data agenda;
     bool encerrar = 0;
     inicializarLista(agenda);
@@ -245,16 +253,27 @@ int main() {
         cin >> m;
         cout << "ano: ";
         cin >> a;
+        cout <<"Hora que inicia: ";
+        cin >> hI;
+        cout <<"Minuto que inicia: ";
+        cin >> mI;
+        cout <<"Hora que final: ";
+        cin >> hF;
+        cout <<"Minuto que final: ";
+        cin >> mF;
+        cout << "Anotacao: ";
+        cin >> anotacao;
 
+        //verificar os dias e ano se estão de acordo
         int dias[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
         if (anoBissexto(a)) dias[2] = 29;
 
         if (m >= 1 && m <= 12 && a > 1900 && d > 0 && d <= dias[m]) {
             if (verificarAgenda(agenda, d, m, a) == true) {
-                adicionarCompromisso(agenda, d, m, a, 10, 00, 11, 10, "Teste");
+                adicionarCompromisso(agenda, d, m, a, hI, mI, hF, mF, &anotacao);
             } else {
                 inserirData(agenda, d, m, a);
-                adicionarCompromisso(agenda, d, m, a, 10, 00, 11, 10, "Teste");
+                adicionarCompromisso(agenda, d, m, a, hI, mI, hF, mF, &anotacao);
             }
             //retirarData(agenda, 24,3,2020);
             mostrarAgenda(agenda, "Datas");
