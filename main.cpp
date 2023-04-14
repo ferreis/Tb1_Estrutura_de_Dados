@@ -62,6 +62,15 @@ int compararData(NoData *data1, NoData *data2) {
     return D_dias;
 }
 
+int compararCompromisso(NoCompromisso *compromisso1, NoCompromisso *compromisso2) {
+    int horaInicial = compromisso1->hInicio - compromisso2->hInicio;
+    int minutoInicial = compromisso2->mInicio - compromisso2->mInicio;
+
+
+    if (horaInicial != 0) return horaInicial;
+    return minutoInicial;
+}
+
 void inicializarLista(listData &lstDat, listCompromisso &lstCompr) {
     lstDat.comeco = nullptr;
     lstDat.fim = nullptr;
@@ -184,7 +193,9 @@ bool removerCompromisso(listData &lst, int dia, int mes, int ano, int hInicio, i
     }
 }
 
-void inserirCompromisso(listData &lstDat, listCompromisso &lstCompr, int dia, int mes, int ano, int horaInicial, int minutoInicial, int horaFinal, int minutoFinal, string texto) {
+
+void inserirCompromisso(listData &lstDat, int dia, int mes, int ano, int horaInicial,
+                        int minutoInicial, int horaFinal, int minutoFinal, string texto) {
     // Insere a data na lista
     inserirData(lstDat, dia, mes, ano);
 
@@ -205,11 +216,46 @@ void inserirCompromisso(listData &lstDat, listCompromisso &lstCompr, int dia, in
     if (data->compromisso.comeco == nullptr) {
         data->compromisso.comeco = novoCompromisso;
         data->compromisso.fim = novoCompromisso;
-    } else {
+        return;
+    }
+    //verifica se a nova é menor que a data do começo
+    if (horaInicial < data->compromisso.comeco->hInicio && minutoInicial < data->compromisso.comeco->mInicio) {
+        novoCompromisso->eloP = data->compromisso.comeco;
+        data->compromisso.comeco->eloA = novoCompromisso;
+        data->compromisso.comeco = novoCompromisso;
+        return;
+    }
+    //vrifica se a nova é menor que a data do final
+    if (horaInicial > data->compromisso.comeco->hInicio && minutoInicial > data->compromisso.comeco->mInicio) {
         data->compromisso.fim->eloP = novoCompromisso;
         novoCompromisso->eloA = data->compromisso.fim;
         data->compromisso.fim = novoCompromisso;
+        return;
     }
+    NoCompromisso *aux = data->compromisso.comeco;
+    while (aux != nullptr) {
+        if (aux->hInicio == horaInicial && aux->mInicio == minutoInicial) {
+            delete novoCompromisso; // a data já existe, então não precisamos adicioná-la novamente
+            return;
+        }
+        if (compararCompromisso(novoCompromisso, aux) <= 0) { // novaData é anterior ou igual a aux
+            if (aux->eloA != nullptr) { // se aux não é o primeiro elemento da lista
+                novoCompromisso->eloA = aux->eloA;
+                aux->eloA->eloP = novoCompromisso;
+            } else { // se aux é o primeiro elemento da lista
+                data->compromisso.comeco = novoCompromisso;
+            }
+            novoCompromisso->eloP = aux;
+            aux->eloA = novoCompromisso;
+            return; // a data foi inserida com sucesso
+        }
+        aux = aux->eloP;
+    }
+// se a função chegou até aqui, a nova data é posterior a todas as datas da lista
+    data->compromisso.fim->eloP = novoCompromisso;
+    novoCompromisso->eloA = data->compromisso.fim;
+    data->compromisso.fim = novoCompromisso;
+    return;
 }
 
 void mostrarCompromisso(listData lst) {
@@ -227,37 +273,53 @@ void mostrarCompromisso(listData lst) {
     }
 }
 
-bool verificaData(int d, int m, int a){
-    int dias[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    if( anoBissexto(a) ) dias[2] = 29;
+bool verificarCompromissoNaData(listData lst, int dia, int mes, int ano) {
+    NoData *data = buscarData(lst, dia, mes, ano);
+    if (data == nullptr) {
+        return true; // a data não existe, logo não há compromisso
+    } else {
+        NoCompromisso *compromisso = data->compromisso.comeco;
+        while (compromisso != nullptr) {
+            if (compromisso->texto != nullptr) {
+                return false; // há compromisso
+            }
+            compromisso = compromisso->eloP;
+        }
+        return true; // não há compromisso
+    }
+}
 
-    if( m >= 1 && m <= 12 && a > 1900 && d > 0 && d <= dias[m] ){
+bool verificaData(int d, int m, int a) {
+    int dias[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (anoBissexto(a)) dias[2] = 29;
+
+    if (m >= 1 && m <= 12 && a > 1900 && d > 0 && d <= dias[m]) {
         return 1;
     }
     return 0;
 }
 
-bool verificaHora(int hora, int minuto){
+bool verificaHora(int hora, int minuto) {
     if (hora >= 0 && hora <= 23 && minuto >= 0 && minuto <= 59) {
-       return 1;
+        return 1;
     }
     return 0;
 }
 
-int menu(){
+int menu() {
     system("cls");
     int escolha;
-    cout<<"================================================================================="<<endl;
-    cout<<"Porgrama bonzao\n\n"<<endl;
-    cout<<"Escolha oque quer fazer:"<<endl;
-    cout<<"1 - Inserir compromisso"<<endl;
-    cout<<"2 - Mostrar agenda"<<endl;
-    cout<<"3 - Remover data"<<endl;
-    cout<<"4 - Remover compromisso"<<endl;
-    cout<<"0 - Encerrar."<<endl;
-    cout<<"\n\n"<<endl;
-    cout<<"================================================================================="<<endl;
-    cin>>escolha;
+    cout << "=================================================================================" << endl;
+    cout << "Porgrama bonzao\n\n" << endl;
+    cout << "Escolha oque quer fazer:" << endl;
+    cout << "1 - Inserir compromisso" << endl;
+    cout << "2 - Mostrar agenda" << endl;
+    cout << "3 - Remover data" << endl;
+    cout << "4 - Remover compromisso" << endl;
+    cout << "0 - Encerrar." << endl;
+    cout << "\n\n" << endl;
+    cout << "=================================================================================" << endl;
+    cin >> escolha;
     return escolha;
 }
 
@@ -269,25 +331,28 @@ int main() {
     int dia, mes, ano, horaInicio, minInicio, horaFim, minFim;
     string texto;
 
-    inserirCompromisso(lstDat, lstCompr, 2, 4, 2023, 14, 0, 15, 0, "Compromisso 1");
-    inserirCompromisso(lstDat, lstCompr, 2, 4, 2023, 10, 30, 11, 30, "Compromisso 2");
-    inserirCompromisso(lstDat, lstCompr, 1, 4, 2023, 10, 0, 12, 0, "Compromisso 3");
-    while (res != 0) {
-        res=menu();
+    inserirCompromisso(lstDat, 2, 4, 2023, 14, 0, 15, 0, "Compromisso 1");
+    inserirCompromisso(lstDat, 2, 4, 2023, 10, 30, 11, 30, "Compromisso 2");
+    inserirCompromisso(lstDat, 2, 4, 2023, 11, 0, 12, 0, "Compromisso 3");
+    inserirCompromisso(lstDat, 1, 4, 2023, 14, 0, 15, 0, "Compromisso 1");
 
-        switch(res){
+    while (res != 0) {
+        res = menu();
+
+        switch (res) {
             case 1://inserir
                 system("cls");
-                cout<<"Escreva seu compromisso:[d/m/a/hInicial/mInicial/hFinal/mFinal/compromisso]"<<endl;
-                cin>>dia >> mes >> ano >> horaInicio >> minInicio >> horaFim >> minFim >> texto;
-                if(verificaData(dia,mes,ano)==1 && verificaHora(horaInicio,minInicio)==1 && verificaHora(horaFim,minFim)==1){
+                cout << "Escreva seu compromisso:[d/m/a/hInicial/mInicial/hFinal/mFinal/compromisso]" << endl;
+                cin >> dia >> mes >> ano >> horaInicio >> minInicio >> horaFim >> minFim >> texto;
+                if (verificaData(dia, mes, ano) == 1 && verificaHora(horaInicio, minInicio) == 1 &&
+                    verificaHora(horaFim, minFim) == 1) {
 
-                    inserirCompromisso(lstDat, lstCompr, dia, mes, ano, horaInicio, minInicio, horaFim, minFim, texto);
+                    inserirCompromisso(lstDat, dia, mes, ano, horaInicio, minInicio, horaFim, minFim, texto);
 
-                    cout<<"Compromisso inserido!"<<endl;
+                    cout << "Compromisso inserido!" << endl;
 
-                }else{
-                    cout<<"Data ou Hora invalida"<<endl;
+                } else {
+                    cout << "Data ou Hora invalida" << endl;
 
                 }
                 break;
@@ -299,24 +364,28 @@ int main() {
             case 3://remover data
 
                 mostrarAgenda(lstDat, "Datas Inseridas");
-                cout<<"Que data quer remover?[d/m/a]"<<endl;
-                cin>>dia>>mes>>ano;
-                if(retirarData(lstDat,dia,mes,ano)==1){
-                    cout<<"A data "<<dia<<"/"<<mes<<"/"<<ano<<" foi removida."<<endl;
-                }else{
-                    cout<<"A data não existe."<<endl;
+                cout << "Que data quer remover?[d/m/a]" << endl;
+                cin >> dia >> mes >> ano;
+                if (retirarData(lstDat, dia, mes, ano) == 1) {
+                    cout << "A data " << dia << "/" << mes << "/" << ano << " foi removida." << endl;
+                } else {
+                    cout << "A data não existe." << endl;
                 }
 
                 break;
             case 4://remover compromisso
 
                 mostrarCompromisso(lstDat);
-                cout<<"Que compromisso quer remover?[d/m/a/hora inicial/minuto inicial]"<<endl;
-                cin>>dia >> mes >> ano >> horaInicio >> minInicio;
-                if(removerCompromisso(lstDat,dia, mes, ano, horaInicio, minInicio)==1){
-                    cout<<"O compromisso "<<dia<<"/"<<mes<<"/"<<ano<<" as "<<horaInicio<<":"<<minInicio<<" foi removido."<<endl;
-                }else{
-                    cout<<"A data não existe."<<endl;
+                cout << "Que compromisso quer remover?[d/m/a/hora inicial/minuto inicial]" << endl;
+                cin >> dia >> mes >> ano >> horaInicio >> minInicio;
+                if (removerCompromisso(lstDat, dia, mes, ano, horaInicio, minInicio) == 1) {
+                    cout << "O compromisso " << dia << "/" << mes << "/" << ano << " as " << horaInicio << ":"
+                         << minInicio << " foi removido." << endl;
+                    if (verificarCompromissoNaData(lstDat, dia, mes, ano) == true) {
+                        retirarData(lstDat, dia, mes, ano);
+                    }
+                } else {
+                    cout << "A data não existe." << endl;
                 }
 
                 break;
