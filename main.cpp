@@ -66,7 +66,6 @@ int compararCompromisso(NoCompromisso *compromisso1, NoCompromisso *compromisso2
     int horaInicial = compromisso1->hInicio - compromisso2->hInicio;
     int minutoInicial = compromisso2->mInicio - compromisso2->mInicio;
 
-
     if (horaInicial != 0) return horaInicial;
     return minutoInicial;
 }
@@ -78,16 +77,7 @@ void inicializarLista(listData &lstDat, listCompromisso &lstCompr) {
     lstCompr.fim = nullptr;
 }
 
-bool verificarAgenda(listData &lst, int d, int m, int a) {
-    NoData *aux = lst.comeco;
-    while (aux != nullptr) {
-        if (aux->dia == d && aux->mes == m && aux->ano == a) {
-            return true;
-        }
-        aux = aux->eloP;
-    }
-    return false;
-}
+
 
 bool inserirData(listData &lst, int d, int m, int a) {
 
@@ -168,7 +158,6 @@ bool retirarData(listData &lst, int d, int m, int a) {
     delete aux;
     return true;
 }
-
 bool removerCompromisso(listData &lst, int dia, int mes, int ano, int hInicio, int mInicio) {
     NoData *data = buscarData(lst, dia, mes, ano);
     if (data == nullptr) return false;
@@ -225,8 +214,8 @@ void inserirCompromisso(listData &lstDat, int dia, int mes, int ano, int horaIni
         data->compromisso.comeco = novoCompromisso;
         return;
     }
-    //vrifica se a nova é menor que a data do final
-    if (horaInicial > data->compromisso.comeco->hInicio && minutoInicial > data->compromisso.comeco->mInicio) {
+    //verifica se a nova é menor que a data do final
+    if (horaInicial > data->compromisso.fim->hInicio && minutoInicial > data->compromisso.fim->mInicio) {
         data->compromisso.fim->eloP = novoCompromisso;
         novoCompromisso->eloA = data->compromisso.fim;
         data->compromisso.fim = novoCompromisso;
